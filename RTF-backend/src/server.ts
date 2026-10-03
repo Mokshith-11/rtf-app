@@ -5,6 +5,7 @@ import cors from "cors";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
+import path from "node:path";
 import { authRoutes, requireAuth, requireRole } from "./auth";
 import { config } from "./config";
 import { prisma } from "./db";
@@ -12,14 +13,15 @@ import { asyncRoute, errorHandler, HttpError } from "./errors";
 import { routes } from "./routes";
 
 const app = express();
+const frontendBuildDirectory = path.resolve(__dirname, "..", "..", "..", "RTF-frontend", "dist", "rtf-frontend", "browser");
 app.disable("x-powered-by");
 app.use(helmet());
-app.use(cors({ origin: config.frontendOrigin, credentials: true }));
+app.use(cors({ origin: config.frontendOrigins, credentials: true }));
 app.use(express.json({ limit: "32kb" }));
 app.use(cookieParser());
 app.use("/api", (req, _res, next) => {
   const origin = req.get("origin");
-  if (origin && origin !== config.frontendOrigin) {
+  if (origin && !config.frontendOrigins.includes(origin)) {
     next(new HttpError(403, "Requests from this origin are not allowed."));
     return;
   }
@@ -56,13 +58,26 @@ app.put("/api/admin/tests/:id", requireAuth, requireRole(UserRole.ADMIN), routes
 app.patch("/api/admin/tests/:id/archive", requireAuth, requireRole(UserRole.ADMIN), routes.setTestArchived);
 app.delete("/api/admin/tests/:id", requireAuth, requireRole(UserRole.ADMIN), routes.deleteTest);
 
+if (config.isProduction) {
+  app.use(express.static(frontendBuildDirectory));
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path === "/api" || req.path.startsWith("/api/") || !req.accepts("html")) {
+      next();
+      return;
+    }
+    res.sendFile(path.join(frontendBuildDirectory, "index.html"), (error) => {
+      if (error) next(error);
+    });
+  });
+}
+
 app.use((_req, _res, next) => next(new HttpError(404, "The requested resource was not found.")));
 app.use(errorHandler);
 
 const server = app.listen(config.port, () => {
-  console.log(`RTF API ready at http://localhost:${config.port}`);
-  console.log(`Health check: http://localhost:${config.port}/api/health`);
-  console.log("Keep this terminal open while using RTF. Press Ctrl+C to stop the API.");
+  console.log(`RTF server listening on port ${config.port}`);
+  console.log("Health check: /api/health");
+  console.log("Press Ctrl+C to stop the server.");
 });
 server.on("error", (error: NodeJS.ErrnoException) => {
   if (error.code === "EADDRINUSE") {

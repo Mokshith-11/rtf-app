@@ -25,21 +25,31 @@ Browser monitoring is a deterrent, not a guarantee against cheating. This MVP re
 1. Copy `RTF-backend\.env.example` to `RTF-backend\.env` and set a long random `JWT_SECRET` and a development `DATABASE_URL`.
 2. Start PostgreSQL with `docker compose up -d --wait db` from this directory, or point `DATABASE_URL` at an existing database.
 3. In `RTF-backend`, run `npm install`, `npm run db:push`, `npm run db:seed`, and `npm run dev`.
-4. In `RTF-frontend`, run `npm install` and `npm start`. The Angular development server proxies `/api` to the local Express service; the browser uses the same-origin API path.
-5. Open `http://localhost:4200`. The API runs at `http://localhost:3000`.
+4. Install mkcert for Windows with `winget install --id FiloSottile.mkcert --exact` (restart the terminal afterward). In `RTF-frontend`, run `npm install` and then `npm run setup:https` once per Windows user. This installs mkcert's development CA in that user's Windows trust store and creates localhost-only certificates in the ignored `certs` folder.
+5. Start the API in `RTF-backend` with `npm run dev`, then start Angular in `RTF-frontend` with `npm start`. Open exactly `https://localhost:4200`; Windows should trust the local certificate. Do not use the computer's LAN IP (such as `https://192.168.x.x:4200`): the development certificate is for localhost only, and the server binds locally. The API remains on `http://localhost:3000` behind the HTTPS frontend proxy; browser requests still use the same-origin `/api` path.
 
-The backend is a long-running web server, so `npm.cmd start` intentionally keeps that terminal session open. It now builds the latest TypeScript source automatically, then starts the API. When it prints `RTF API ready at http://localhost:3000`, it is running; confirm with `http://localhost:3000/api/health`. Keep the terminal open while using the app and press Ctrl+C when finished. Use `npm.cmd run dev` for development with automatic source reloads.
+The backend is a long-running web server, so `npm.cmd start` intentionally keeps that terminal session open. It now builds the latest TypeScript source automatically, then starts the API. When it prints `RTF server listening on port 3000`, confirm it with `http://localhost:3000/api/health`. Keep the terminal open while using the app and press Ctrl+C when finished. Use `npm.cmd run dev` for development with automatic source reloads.
 
-To share the development app with devices on the same trusted Wi-Fi/LAN, find this computer's private IPv4 address and start Angular with `npm start -- --host 0.0.0.0 --allowed-hosts YOUR_LAN_IP`. Give other devices `http://YOUR_LAN_IP:4200`. Keep both devices on the same trusted network. This development server is not a public Internet deployment; use a production HTTPS host and reverse proxy for that.
+Local HTTPS uses a development-only mkcert certificate trusted by the current Windows user. Keep `RTF-frontend\certs` and mkcert's local CA private to this machine; the certificate directory is git-ignored. Never use these local certificates in production. Render's HTTPS remains independently managed by Render and requires no certificate configuration in the repository.
+
+## Deploy to Render
+
+The root `render.yaml` configures one free Render Node web service. Connect the GitHub repository to Render as a Blueprint; Render installs both applications, builds Angular and the Prisma client, builds the Express server, then starts the server on Render's `PORT`. Express serves the Angular production build and retains all `/api` routes, so the frontend continues to use same-origin `/api` requests. Render supplies HTTPS and its service URL; no Render URL or custom domain is hard-coded.
+
+When creating the Blueprint, provide `DATABASE_URL` for a reachable PostgreSQL database. The service generates `JWT_SECRET` automatically. Before using the app, initialize the production schema with `npm run db:push` from `RTF-backend` against that database, then seed an administrator using `ADMIN_EMAIL` and `ADMIN_PASSWORD` with `npm run db:seed`. Keep database credentials and the administrator password private; never commit them.
+
+In production, the backend automatically trusts Render's `RENDER_EXTERNAL_URL` for same-origin requests and password-reset links. To add a custom domain later, set `FRONTEND_ORIGIN` to the allowed HTTPS origin(s), comma-separated if keeping more than one, and set `APP_BASE_URL` to the URL that password-reset emails should open. The backend requires HTTPS origins in production and uses secure session cookies.
+
+Email password reset requires SMTP provider settings (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM`) in the Render service environment. Set these privately in the Render dashboard; do not put credentials in `render.yaml` or source control. `APP_BASE_URL` defaults to Render's HTTPS service URL until you set it explicitly.
 
 The seed command creates an administrator using `ADMIN_EMAIL` and `ADMIN_PASSWORD` from the backend environment, and adds a small sample assessment. Change seed credentials before sharing a development environment. Production must use HTTPS, a managed PostgreSQL service, strong secrets, and appropriately restricted CORS origins.
 
 ### Gmail password-reset email (local development)
 
-The Forgot password form returns “Password reset email is not configured” until all SMTP settings are provided in `RTF-backend\.env`. For Gmail, enable 2-Step Verification on the sending Google account and create a Google App Password; use that app password (not your normal Gmail password). Set:
+The Forgot password form returns “Password reset email is not configured” until all SMTP settings are provided in `RTF-backend\.env`. Set `FRONTEND_ORIGIN=https://localhost:4200` and `APP_BASE_URL=https://localhost:4200` there as well, so the API accepts local requests and reset links return to the local frontend. For Gmail, enable 2-Step Verification on the sending Google account and create a Google App Password; use that app password (not your normal Gmail password). Set:
 
 ```dotenv
-APP_BASE_URL=http://localhost:4200
+APP_BASE_URL=https://localhost:4200
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_SECURE=false
@@ -62,7 +72,7 @@ Candidate registration is intentionally open in this development MVP and assigns
 
 ## Production security checklist
 
-- Require HTTPS, keep the database private, rotate strong secrets, and configure trusted origins.
+- Use the platform's trusted HTTPS, keep the database private, rotate strong secrets, and configure the allowed HTTPS frontend origins.
 - Add CSRF protection for cookie-authenticated deployments, verified contact details, and an audited candidate enrollment process. Configure a real SMTP provider before enabling email password reset.
 - Add authorization and audit logging around every new admin or candidate management operation.
 - Test concurrent submissions, timer expiry, scoring, result visibility, and account isolation against a non-production database.
@@ -71,7 +81,7 @@ Candidate registration is intentionally open in this development MVP and assigns
 
 ## Configuration
 
-See `RTF-backend\.env.example`. Set `FRONTEND_ORIGIN` to the exact Angular origin. Configure `APP_BASE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM` to enable password reset emails; reset requests are disabled with a safe 503 until all SMTP settings are configured. Reset links expire after 30 minutes and are one-time use. Never commit `.env`. After updating the Prisma schema, run `npm run db:generate` and `npm run db:push` in the backend, then restart the API.
+See `RTF-backend\.env.example`. Locally, set `FRONTEND_ORIGIN` to the Angular origin. Configure `APP_BASE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM` to enable password reset emails; reset requests are disabled with a safe 503 until all SMTP settings are configured. Reset links expire after 30 minutes, are sent to the registered email, and are one-time use. Production origins and reset links must use HTTPS. Never commit `.env`. After updating the Prisma schema, run `npm run db:generate` and `npm run db:push` in the backend, then restart the API.
 
 ## API overview
 

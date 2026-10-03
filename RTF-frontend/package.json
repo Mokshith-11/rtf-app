@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "ng serve --host 0.0.0.0",
+    "setup:https": "node -e \"require('node:fs').mkdirSync('certs', { recursive: true })\" && mkcert -install && mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem localhost 127.0.0.1 ::1",
+    "start": "ng serve --host localhost --ssl --ssl-cert certs/localhost.pem --ssl-key certs/localhost-key.pem",
     "build": "ng build"
   },
   "dependencies": {
