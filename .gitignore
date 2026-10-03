@@ -1,5 +1,5 @@
 node_modules/
-dist/
+/RTF-backend/dist/
 .angular/
 .env
 .env.*
