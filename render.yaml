@@ -10,7 +10,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm ci --prefix RTF-backend && npm --prefix RTF-backend run db:generate && npm --prefix RTF-backend run build
-    startCommand: npx prisma db push --schema=RTF-backend/prisma/schema.prisma && npm --prefix RTF-backend run db:seed && node RTF-backend/dist/src/server.js
+    startCommand: npm --prefix RTF-backend run db:push && npm --prefix RTF-backend run db:seed && node RTF-backend/dist/src/server.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
