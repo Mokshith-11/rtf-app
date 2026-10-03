@@ -25,6 +25,7 @@
     "nodemailer": "^10.0.13",
     "prisma": "^6.10.1",
     "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
     "zod": "^3.25.67"
   },
   "devDependencies": {
@@ -33,8 +34,7 @@
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.15.32",
-    "@types/nodemailer": "^8.0.2",
-    "typescript": "^5.8.3"
+    "@types/nodemailer": "^8.0.2"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
