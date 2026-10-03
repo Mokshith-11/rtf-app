@@ -1,0 +1,300 @@
+<div class="app-shell" [class.exam-shell]="view === 'exam'">
+  <header class="topbar">
+    <a class="brand" href="#" (click)="$event.preventDefault(); goHome()">
+      <span class="brand-mark"><span class="radar-dot"></span>RTF</span>
+      <span class="brand-copy"><strong>Radar Test Fields</strong><small>TECHNICAL ASSESSMENT PLATFORM</small></span>
+    </a>
+    <div class="top-actions">
+      <span class="live-indicator" *ngIf="view === 'exam'">ASSESSMENT IN PROGRESS</span>
+      <button class="violation-count-alert" type="button" *ngIf="user?.role === 'ADMIN' && adminData" (click)="scrollToViolationActivity()" aria-live="polite">
+        <span aria-hidden="true">⚠</span> {{ adminData.metrics.violations }} violation{{ adminData.metrics.violations === 1 ? '' : 's' }} recorded
+      </button>
+      <button class="theme-toggle" type="button" (click)="toggleTheme()" [attr.aria-label]="themeActionLabel" [attr.aria-pressed]="theme === 'light'" [attr.title]="themeActionLabel"><span aria-hidden="true">{{ theme === 'dark' ? '☼' : '☾' }}</span><span class="theme-toggle-label">{{ theme === 'dark' ? 'Light' : 'Dark' }}</span></button>
+      <span class="user-pill" *ngIf="user && view !== 'exam'"><span class="avatar">{{ user.name.charAt(0) }}</span>{{ user.name }}</span>
+      <button class="text-button" *ngIf="user && view !== 'exam'" (click)="signOut()">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page-wrap" *ngIf="view === 'auth'">
+    <section class="auth-layout">
+      <div class="auth-story">
+        <div class="eyebrow"><span></span> PRECISION IN EVERY ASSESSMENT</div>
+        <h1>Measure what<br>you <em>really know.</em></h1>
+        <p>A focused space for technical assessments, meaningful practice, and measurable progress.</p>
+        <div class="orbit-art" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="orbit orbit-three"></span><span class="orbit-center">RTF</span><i class="orbit-signal signal-one"></i><i class="orbit-signal signal-two"></i></div>
+        <div class="story-foot"><span class="pulse"></span> BUILT FOR FOCUSED THINKING <span class="story-line"></span> SECURE BY DESIGN</div>
+      </div>
+      <section class="auth-card panel">
+        <div class="card-kicker">{{ authMode === 'login' ? 'WELCOME BACK' : authMode === 'register' ? 'WELCOME ABOARD' : 'ACCOUNT SECURITY' }}</div>
+        <h2>{{ authMode === 'login' ? 'Sign in to RTF' : authMode === 'register' ? 'Create your account' : authMode === 'forgot' ? 'Forgot password?' : 'Choose a new password' }}</h2>
+        <p class="muted">{{ authMode === 'login' ? 'Enter your credentials to continue.' : authMode === 'register' ? 'Register as a candidate to begin.' : authMode === 'forgot' ? 'We’ll email a one-time reset link if an account matches.' : 'Choose a strong password for your account.' }}</p>
+        <div class="error-banner" *ngIf="error">{{ error }}</div>
+        <div class="success-banner" *ngIf="authNotice">{{ authNotice }}</div>
+        <form (ngSubmit)="submitAuth()">
+          <label *ngIf="authMode === 'register'">Full name<input name="name" [(ngModel)]="form['name']" required minlength="2" autocomplete="name" placeholder="Your name"></label>
+          <label *ngIf="authMode === 'register'">Batch number<input name="batchNumber" [(ngModel)]="form['batchNumber']" required maxlength="50" placeholder="e.g. BATCH-2026"></label>
+          <label *ngIf="authMode !== 'reset'">Email address<input type="email" name="email" [(ngModel)]="form['email']" required autocomplete="email" placeholder="you@example.com"></label>
+          <label *ngIf="authMode === 'register'">Indian mobile number<input type="tel" name="phone" [(ngModel)]="form['phone']" autocomplete="tel" inputmode="tel" required maxlength="24" pattern="(\+?91[ ()-]?|0)?[6-9][0-9]{9}" placeholder="+91 98765 43210"><small class="field-hint">Enter a 10-digit Indian mobile number; it will be stored with the +91 country code.</small></label>
+          <label *ngIf="authMode !== 'forgot'">Password<span class="password-input-wrap"><input [type]="passwordVisible ? 'text' : 'password'" name="password" [(ngModel)]="form['password']" required [minlength]="authMode === 'register' || authMode === 'reset' ? 13 : 1" maxlength="128" [attr.autocomplete]="authMode === 'login' ? 'current-password' : 'new-password'" placeholder="{{ authMode === 'login' ? 'Enter your password' : '8 letters, 4 numbers, 1 special character' }}"><button class="password-visibility" type="button" (click)="togglePasswordVisibility()" [attr.aria-label]="passwordVisible ? 'Hide password' : 'Show password'" [attr.aria-pressed]="passwordVisible">{{ passwordVisible ? 'Hide' : 'Show' }}</button></span><small class="field-hint" *ngIf="authMode === 'register' || authMode === 'reset'">At least 8 letters, 4 numbers, and 1 special character.</small><small class="field-validation" *ngIf="(authMode === 'register' || authMode === 'reset') && form['password'] && !registrationPasswordValid">Password does not meet these requirements yet.</small></label>
+          <label *ngIf="authMode === 'reset'">Confirm new password<input type="password" name="confirmPassword" [(ngModel)]="form['confirmPassword']" required minlength="13" maxlength="128" autocomplete="new-password"></label>
+          <button class="button primary full" [disabled]="busy || ((authMode === 'register' || authMode === 'reset') && !registrationPasswordValid) || (authMode === 'reset' && !resetPasswordsMatch)">{{ busy ? 'Please wait…' : authMode === 'login' ? 'Sign in' : authMode === 'register' ? 'Create account' : authMode === 'forgot' ? 'Send reset link' : 'Reset password' }} <span>↗</span></button>
+        </form>
+        <button class="switch-auth" *ngIf="authMode === 'login'" type="button" (click)="authMode = 'forgot'; error = ''; authNotice = ''">Forgot your password?</button>
+        <button class="switch-auth" *ngIf="authMode === 'login' || authMode === 'register'" type="button" (click)="authMode = authMode === 'login' ? 'register' : 'login'; error = ''; authNotice = ''">
+          {{ authMode === 'login' ? 'New to RTF? Create a candidate account' : 'Already registered? Sign in' }} <span>→</span>
+        </button>
+        <button class="switch-auth" *ngIf="authMode === 'forgot' || authMode === 'reset'" type="button" (click)="authMode = 'login'; authNotice = ''; error = ''">Return to sign in</button>
+        <div class="secure-note"><span>⌑</span> Your session is protected with secure authentication.</div>
+      </section>
+    </section>
+  </main>
+
+  <main class="page-wrap" *ngIf="view === 'dashboard'">
+    <div class="page-heading">
+      <div><div class="eyebrow"><span></span> CANDIDATE WORKSPACE</div><h1>Good to see you, {{ greetingName }}.</h1><p>Choose an assessment to review and get started.</p></div>
+      <div class="date-stamp"><span class="date-icon">◷</span> YOUR NEXT CHALLENGE STARTS HERE</div>
+    </div>
+    <nav class="candidate-nav" aria-label="Candidate workspace">
+      <button class="button secondary" type="button" (click)="showCandidateAssessments()">My assessments</button>
+      <button class="button secondary" type="button" (click)="showAssessmentHistory()">Assessment history</button>
+      <button class="button secondary" type="button" (click)="showProfile()">Profile</button>
+    </nav>
+    <div class="error-banner" *ngIf="error">{{ error }}</div>
+    <section class="dashboard-grid">
+      <div class="assessment-column">
+        <div class="section-title"><div><span class="section-index">01</span><h2>Available assessments</h2></div><span class="count-chip">{{ tests.length }} AVAILABLE</span></div>
+        <article class="test-card panel" *ngFor="let test of tests; let i = index">
+          <div class="test-card-top"><span class="category-tag">{{ test.category }}</span><span class="difficulty" [class]="test.difficulty.toLowerCase()">{{ test.difficulty }}</span></div>
+          <h3>{{ test.title }}</h3><p class="test-description">{{ test.description }}</p>
+          <div class="test-stats"><div><strong>{{ test.questionCount }}</strong><span>QUESTIONS</span></div><div><strong>{{ test.durationMinutes }}<small>m</small></strong><span>DURATION</span></div><div><strong>{{ test.totalMarks }}</strong><span>TOTAL MARKS</span></div><div><strong>{{ test.passingMarks }}</strong><span>TO PASS</span></div></div>
+          <div class="test-card-bottom"><span class="assessment-id">ASSESSMENT / {{ ('0' + (i + 1)).slice(-2) }}</span><button class="button primary" (click)="selectTest(test)">Review details <span>→</span></button></div>
+        </article>
+        <div class="empty-state panel" *ngIf="tests.length === 0"><div class="empty-icon">◌</div><h3>No assessments available</h3><p>Check back later for your next scheduled challenge.</p></div>
+      </div>
+      <aside class="side-column">
+        <div class="focus-card panel"><div class="focus-grid"></div><span class="card-kicker">YOUR FOCUS, YOUR FUTURE</span><div class="focus-glyph">◎</div><h3>One question<br>at a time.</h3><p>Take a breath, read carefully, and trust your preparation.</p><div class="focus-rule"></div><span class="focus-meta">RTF / CANDIDATE SPACE</span></div>
+        <div class="support-card"><span class="support-icon">i</span><div><strong>Before you begin</strong><p>Use a stable connection and allow enough uninterrupted time to finish.</p></div></div>
+        <div class="mini-stat"><span>YOUR BATCH</span><strong>{{ user?.batchNumber || 'BATCH NOT SET' }}</strong><span>RTF CANDIDATE</span></div>
+      </aside>
+    </section>
+  </main>
+
+  <main class="page-wrap" *ngIf="view === 'my-assessments' || view === 'history'">
+    <button class="back-link" type="button" (click)="backToDashboard()">← Dashboard</button>
+    <div class="page-heading"><div><div class="eyebrow"><span></span> CANDIDATE WORKSPACE</div><h1>{{ view === 'history' ? 'Assessment history' : 'My assessments' }}</h1><p>Assessment availability and results are verified by the server.</p></div></div>
+    <div class="error-banner" *ngIf="error">{{ error }}</div>
+    <section class="assessment-column">
+      <article class="test-card panel" *ngFor="let assessment of visibleCandidateAssessments">
+        <div class="test-card-top"><span class="category-tag">{{ assessment.category }}</span><span class="test-status" [class]="assessment.status.toLowerCase()">{{ assessment.status.replace('_', ' ') }}</span></div>
+        <h3>{{ assessment.title }}</h3><p class="test-description">{{ assessment.description }}</p>
+        <div class="test-stats"><div><strong>{{ assessment.questionCount }}</strong><span>QUESTIONS</span></div><div><strong>{{ assessment.durationMinutes }}<small>m</small></strong><span>DURATION</span></div><div><strong>{{ assessment.totalMarks }}</strong><span>TOTAL MARKS</span></div><div><strong>{{ assessment.passingMarks }}</strong><span>TO PASS</span></div></div>
+        <div class="admin-meta schedule-meta"><span>Starts: {{ formatScheduledTime(assessment.startTime ?? null) }}</span><span>Closes: {{ formatScheduledTime(assessment.endTime ?? null) }}</span><span *ngIf="assessment.attempt?.startedAt">Started: {{ formatDateTime(assessment.attempt?.startedAt) }}</span><span *ngIf="assessment.attempt?.submittedAt">Submitted: {{ formatDateTime(assessment.attempt?.submittedAt) }}</span><span *ngIf="assessment.attempt?.timeTakenSeconds !== null && assessment.attempt?.timeTakenSeconds !== undefined">Time taken: {{ formatDuration(assessment.attempt?.timeTakenSeconds) }}</span><span *ngIf="assessment.attempt?.score !== null && assessment.attempt?.score !== undefined">Score: {{ assessment.attempt?.score }} / {{ assessment.totalMarks }} ({{ assessment.attempt?.percentage }}%)</span></div>
+        <div class="test-card-bottom">
+          <span class="assessment-id">{{ assessment.attempt?.startedAt ? 'Started ' + formatDateTime(assessment.attempt?.startedAt) : 'ASSESSMENT / RTF' }}</span>
+          <span class="assessment-actions">
+            <button class="button secondary" type="button" *ngIf="view !== 'history' && assessment.status === 'UPCOMING' && assessment.startTime" (click)="openAdmitCard(assessment.id)">View admit card</button>
+            <button class="button primary" type="button" *ngIf="view !== 'history' && assessment.status === 'ACTIVE'" (click)="selectTest(assessment)">View details <span>→</span></button>
+            <button class="button primary" type="button" *ngIf="view !== 'history' && assessment.status === 'IN_PROGRESS'" (click)="resumeAssessment(assessment)">Resume assessment <span>→</span></button>
+            <button class="button secondary" type="button" *ngIf="assessment.status === 'COMPLETED' && assessment.showResults" (click)="openAssessmentResult(assessment)" [disabled]="busy">View result</button>
+            <span class="muted" *ngIf="assessment.status === 'COMPLETED' && !assessment.showResults">Results are not available for this assessment.</span>
+          </span>
+        </div>
+      </article>
+      <div class="empty-state panel" *ngIf="visibleCandidateAssessments.length === 0"><h3>No assessments found</h3><p>{{ view === 'history' ? 'Completed assessment history will appear here.' : 'Your assessments will appear here when available.' }}</p></div>
+    </section>
+  </main>
+
+  <main class="page-wrap narrow-wrap" *ngIf="view === 'profile'">
+    <button class="back-link" type="button" (click)="backToDashboard()">← Dashboard</button>
+    <div class="eyebrow"><span></span> CANDIDATE PROFILE</div><h1>Your profile</h1>
+    <p class="lead">Account details shown below are read-only.</p>
+    <section class="profile-grid panel" *ngIf="user">
+      <div><span>NAME</span><strong>{{ user.name }}</strong></div>
+      <div><span>CANDIDATE ID</span><strong>{{ user.id }}</strong></div>
+      <div><span>EMAIL</span><strong>{{ user.email }}</strong></div>
+      <div><span>PHONE</span><strong>{{ user.phone || 'Not provided' }}</strong></div>
+      <div><span>BATCH NUMBER</span><strong>{{ user.batchNumber || 'Not provided' }}</strong></div>
+      <div><span>ACCOUNT CREATED</span><strong>{{ user.createdAt ? formatDateTime(user.createdAt) : '—' }}</strong></div>
+      <div><span>ROLE</span><strong>{{ user.role }}</strong></div>
+    </section>
+  </main>
+
+  <main class="page-wrap admit-card-page" *ngIf="view === 'admit-card' && admitCard">
+    <div class="admit-actions"><button class="back-link" type="button" (click)="backToDashboard()">← Dashboard</button><button class="button primary" type="button" (click)="printAdmitCard()">Print admit card</button></div>
+    <article class="admit-card panel">
+      <header class="admit-card-header"><div class="brand-mark">RTF</div><div><span class="card-kicker">RADAR TEST FIELDS</span><h1>Examination Admit Card</h1><p>Candidate entry document</p></div></header>
+      <div class="admit-card-reference"><span>ASSESSMENT ID <strong>{{ admitCard.assessment.id }}</strong></span><span>CANDIDATE ID <strong>{{ admitCard.candidate.candidateId }}</strong></span></div>
+      <section class="admit-section"><h2>Candidate information</h2><div class="admit-fields"><div><span>Candidate name</span><strong>{{ admitCard.candidate.name }}</strong></div><div><span>Email</span><strong>{{ admitCard.candidate.email }}</strong></div><div><span>Phone</span><strong>{{ admitCard.candidate.phone || 'Not provided' }}</strong></div><div><span>Batch number</span><strong>{{ admitCard.candidate.batchNumber || 'Not provided' }}</strong></div></div></section>
+      <section class="admit-section"><h2>Assessment information</h2><h3>{{ admitCard.assessment.title }}</h3><p>{{ admitCard.assessment.description }}</p><div class="admit-fields"><div><span>Category</span><strong>{{ admitCard.assessment.category }}</strong></div><div><span>Difficulty</span><strong>{{ admitCard.assessment.difficulty }}</strong></div><div><span>Questions</span><strong>{{ admitCard.assessment.questionCount }}</strong></div><div><span>Total marks</span><strong>{{ admitCard.assessment.totalMarks }}</strong></div><div><span>Passing marks</span><strong>{{ admitCard.assessment.passingMarks }}</strong></div><div><span>Negative marking</span><strong>{{ admitCard.assessment.negativeMarking }}</strong></div></div></section>
+      <section class="admit-section"><h2>Schedule · India Standard Time</h2><div class="admit-fields"><div><span>Reporting time</span><strong>{{ formatDateTime(admitCard.assessment.reportingTime) }}</strong></div><div><span>Assessment date</span><strong>{{ formatDateTime(admitCard.assessment.startTime) }}</strong></div><div><span>Starts</span><strong>{{ formatScheduledTime(admitCard.assessment.startTime) }}</strong></div><div><span>Closes</span><strong>{{ formatScheduledTime(admitCard.assessment.endTime) }}</strong></div><div><span>Duration</span><strong>{{ admitCard.assessment.durationMinutes }} minutes</strong></div></div></section>
+      <section class="admit-section"><h2>Examination instructions</h2><ol><li *ngFor="let instruction of admitCard.instructions">{{ instruction }}</li></ol></section>
+      <p class="admit-security-notice">Security notice: examination activity may be monitored. Detected violations may be recorded for review.</p>
+    </article>
+  </main>
+
+  <main class="page-wrap narrow-wrap" *ngIf="view === 'instructions'">
+    <button class="back-link" (click)="backToDashboard()">← All assessments</button>
+    <div class="eyebrow"><span></span> BEFORE YOU BEGIN</div>
+    <h1>{{ selectedTest?.title }}</h1><p class="lead">{{ selectedTest?.description }}</p>
+    <div class="detail-strip panel"><div><span>QUESTIONS</span><strong>{{ selectedTest?.questionCount }}</strong></div><div><span>DURATION</span><strong>{{ selectedTest?.durationMinutes }} min</strong></div><div><span>TOTAL MARKS</span><strong>{{ selectedTest?.totalMarks }}</strong></div><div><span>PASSING MARKS</span><strong>{{ selectedTest?.passingMarks }}</strong></div></div>
+    <section class="panel instruction-panel"><span class="card-kicker">ASSESSMENT PROTOCOL</span><h2>Read before starting</h2><ul class="instruction-list"><li>Your timer starts when you enter the assessment.</li><li>Your responses save automatically as you work.</li><li>When time runs out, your answers are submitted automatically.</li><li>You can move between questions and change answers until submission.</li><li>Do not copy, paste, share assessment content, or use prohibited shortcuts.</li><li>Do not switch away from this page; visibility changes may be logged. Browser monitoring is a deterrent and cannot prevent all forms of cheating.</li></ul><label class="check-row"><input type="checkbox" [(ngModel)]="instructionsAccepted"> <span>I have read and understood the instructions.</span></label></section>
+    <div class="error-banner" *ngIf="error">{{ error }}</div>
+    <button class="button primary large" [disabled]="!instructionsAccepted || busy" (click)="checkSystem()">Proceed to system check <span>→</span></button>
+  </main>
+
+  <main class="page-wrap narrow-wrap" *ngIf="view === 'system-check'">
+    <button class="back-link" (click)="view = 'instructions'">← Review instructions</button>
+    <div class="eyebrow"><span></span> PRE-FLIGHT CHECK</div><h1>Ready to begin?</h1>
+    <p class="lead">We checked the basic browser and connection features needed for this assessment.</p>
+    <section class="panel system-check-panel"><div class="system-check-row"><span class="check-status">{{ systemReady ? '✓' : '…' }}</span><div><strong>Browser supported</strong><small>Modern browser APIs are available</small></div><span class="system-state">{{ systemReady ? 'READY' : 'CHECKING' }}</span></div><div class="system-check-row"><span class="check-status">{{ systemReady ? '✓' : '…' }}</span><div><strong>Timer ready</strong><small>The server enforces the assessment deadline</small></div><span class="system-state">{{ systemReady ? 'READY' : 'CHECKING' }}</span></div><div class="system-check-row"><span class="check-status">{{ systemReady ? '✓' : '…' }}</span><div><strong>Auto-save service</strong><small>Assessment API is reachable</small></div><span class="system-state">{{ systemReady ? 'READY' : 'CHECKING' }}</span></div><div class="system-check-row"><span class="check-status">{{ systemReady ? '✓' : '…' }}</span><div><strong>Visibility monitoring</strong><small>Page visibility events can be detected</small></div><span class="system-state">{{ systemReady ? 'READY' : 'CHECKING' }}</span></div></section>
+    <div class="error-banner" *ngIf="error">{{ error }} <button class="text-button" (click)="checkSystem()">Retry</button></div>
+    <button class="button primary large" [disabled]="!systemReady || busy" (click)="beginTest()">{{ busy ? 'Preparing your test…' : 'Start test' }} <span>→</span></button>
+  </main>
+
+  <main class="exam-layout" *ngIf="view === 'exam'">
+    <div class="student-violation-toast" role="status" aria-live="assertive" *ngIf="studentViolationNotice">
+      <span>{{ studentViolationNotice }}</span>
+      <button type="button" aria-label="Dismiss alert" (click)="studentViolationNotice = ''">×</button>
+    </div>
+    <div class="exam-header">
+      <div><span class="exam-label">LIVE ASSESSMENT</span><strong>{{ selectedTest?.title || 'Technical assessment' }}</strong></div>
+      <div class="save-status"><span class="save-dot"></span>{{ savedState }}</div>
+      <div class="exam-timer" [class.urgent]="remainingSeconds < 60"><span>TIME REMAINING</span><strong>{{ timeLabel }}</strong></div>
+    </div>
+    <div class="warning-banner" *ngIf="warning"><span>⚠</span>{{ warning }}<button (click)="warning = ''" aria-label="Dismiss warning">×</button></div>
+    <div class="exam-content">
+      <section class="question-panel panel" *ngIf="currentQuestion as question">
+        <div class="question-top"><span>QUESTION <strong>{{ current + 1 }}</strong><span class="question-total"> / {{ questions.length }}</span></span><span class="mark-value">{{ question.marks }} MARK{{ question.marks === 1 ? '' : 'S' }}</span></div>
+        <div class="progress-track"><span [style.width.%]="((current + 1) / questions.length) * 100"></span></div>
+        <h1>{{ question.questionText }}</h1>
+        <div class="options-list">
+          <button class="option-row" *ngFor="let option of question.options; let i = index" [class.selected]="answers[question.id] === i" (click)="choose(i)">
+            <span class="option-letter">{{ ['A','B','C','D'][i] }}</span><span class="option-text">{{ option }}</span><span class="option-radio"></span>
+          </button>
+        </div>
+        <div class="question-actions"><div><button class="text-button" (click)="clearAnswer()" [disabled]="answers[question.id] === null">Clear response</button><button class="text-button review-toggle" [class.active]="markedForReview.has(question.id)" (click)="toggleReview()">{{ markedForReview.has(question.id) ? 'Remove review mark' : 'Mark for review' }}</button></div><span>Saved answers: {{ answeredCount }} / {{ questions.length }}</span></div>
+        <div class="question-nav"><button class="button secondary" (click)="moveQuestion(-1)" [disabled]="current === 0">← Previous</button><button class="button primary" *ngIf="current < questions.length - 1" (click)="moveQuestion(1)">Next question →</button><button class="button submit-button" *ngIf="current === questions.length - 1" [disabled]="busy" (click)="confirmSubmit()">Review & submit →</button></div>
+      </section>
+      <aside class="navigator panel"><span class="card-kicker">QUESTION MAP</span><h3>Navigate</h3><p>Select a number to jump to that question.</p><div class="question-map"><button *ngFor="let q of questions; let i = index" [class.current]="i === current" [class.answered]="answers[q.id] !== null" [class.review-marked]="markedForReview.has(q.id)" (click)="current = i">{{ i + 1 }}</button></div><div class="map-legend"><span><i class="legend-dot current-dot"></i>Current</span><span><i class="legend-dot answered-dot"></i>Answered</span><span><i class="legend-dot review-dot"></i>Marked for review</span><span><i class="legend-dot"></i>Unanswered</span></div><div class="navigator-bottom"><span class="save-dot"></span> {{ answeredCount }} answered</div></aside>
+    </div>
+  </main>
+
+  <main class="page-wrap result-wrap" *ngIf="view === 'result' && result">
+    <div class="eyebrow"><span></span> ASSESSMENT COMPLETE</div>
+    <section class="result-hero panel"><div class="result-copy"><span class="card-kicker">YOUR PERFORMANCE</span><h1>{{ result.passed ? 'Well done.' : 'Keep building.' }}</h1><p>{{ result.testTitle }} · {{ result.status === 'AUTO_SUBMITTED' ? 'Auto-submitted' : 'Submitted' }}</p><span class="pass-chip" [class.fail-chip]="!result.passed">{{ result.passed ? 'PASSING SCORE' : 'BELOW PASSING SCORE' }}</span></div><div class="score-ring"><div><strong>{{ result.percentage | number:'1.0-1' }}<small>%</small></strong><span>OVERALL SCORE</span></div></div><div class="result-score"><span>SCORE ACHIEVED</span><strong>{{ result.score }}<small> / {{ result.totalMarks }}</small></strong><span>RANK #{{ result.rank }}</span></div></section>
+    <section class="result-breakdown panel"><div><span>QUESTIONS</span><strong>{{ result.answers.length }}</strong></div><div><span>CORRECT</span><strong class="score-correct">{{ correctCount }}</strong></div><div><span>WRONG</span><strong class="score-wrong">{{ wrongCount }}</strong></div><div><span>UNANSWERED</span><strong>{{ unansweredCount }}</strong></div><div><span>TIME TAKEN</span><strong>{{ timeTakenLabel }}</strong></div></section>
+    <section class="panel analysis-panel"><div class="section-title"><div><span class="section-index">01</span><h2>Question review</h2></div><span class="count-chip">{{ result.answers.length }} QUESTIONS</span></div>
+      <article class="review-question" *ngFor="let answer of result.answers; let i = index"><div class="review-number">{{ ('0' + (i + 1)).slice(-2) }}</div><div class="review-body"><span class="review-state" [class.correct]="answer.isCorrect">{{ answer.selectedIndex === null ? 'UNANSWERED' : answer.isCorrect ? 'CORRECT' : 'INCORRECT' }}</span><h3>{{ answer.questionText }}</h3><p class="your-answer">Your answer: <strong>{{ answer.selectedIndex === null ? 'No response' : answer.options[answer.selectedIndex] }}</strong></p><p class="correct-answer">Correct answer: <strong>{{ answer.options[answer.correctIndex] }}</strong></p><p class="explanation" *ngIf="answer.explanation">{{ answer.explanation }}</p></div><strong class="marks-awarded">{{ answer.marksAwarded > 0 ? '+' : '' }}{{ answer.marksAwarded }}</strong></article>
+      <p class="muted" *ngIf="result.answers.length === 0">Detailed question review is disabled for this assessment.</p>
+    </section>
+    <button class="button primary" (click)="backToDashboard()">Return to assessments <span>→</span></button>
+  </main>
+
+  <main class="page-wrap" *ngIf="view === 'admin'">
+    <div class="violation-toast" role="status" aria-live="assertive" *ngIf="violationNotice">
+      <span>{{ violationNotice }}</span>
+      <button type="button" aria-label="Dismiss alert" (click)="violationNotice = ''">×</button>
+    </div>
+    <div class="page-heading"><div><div class="eyebrow"><span></span> HOST CONTROL ROOM</div><h1>Assessment overview</h1><p>Monitor candidate participation and performance.</p></div><div class="admin-heading-actions"><span class="admin-badge">ADMINISTRATOR</span><button class="button primary" (click)="showCreateTest = !showCreateTest">{{ showCreateTest ? 'Close form' : '＋ Create assessment' }}</button></div></div>
+    <div class="error-banner" *ngIf="error">{{ error }}</div>
+    <div class="success-banner" *ngIf="authNotice">{{ authNotice }}</div>
+    <section class="test-builder panel" *ngIf="testEditDraft as draft">
+      <div class="section-title"><div><span class="section-index">EDIT</span><h2>Edit assessment</h2></div><span class="count-chip">ASSESSMENT SETTINGS</span></div>
+      <p class="warning-banner" *ngIf="editingTestHasAttempts">Saving will archive this version and create a corrected version for future candidates. Existing attempts and results will remain attached to the archived version.</p>
+      <form (ngSubmit)="saveTestEdits()">
+        <div class="builder-grid">
+          <label>Assessment title<input name="editTitle" [(ngModel)]="draft.title" required minlength="3" maxlength="120"></label>
+          <label>Category<input name="editCategory" [(ngModel)]="draft.category" required minlength="2" maxlength="80"></label>
+          <label class="wide-field">Description<textarea name="editDescription" [(ngModel)]="draft.description" required minlength="5" maxlength="2000" rows="2"></textarea></label>
+          <label>Difficulty<select name="editDifficulty" [(ngModel)]="draft.difficulty"><option value="EASY">Easy</option><option value="MEDIUM">Medium</option><option value="HARD">Hard</option></select></label>
+          <label>Duration (minutes)<input name="editDuration" type="number" min="1" max="300" [(ngModel)]="draft.durationMinutes" required></label>
+          <label>Available from (IST)<input name="editStartTime" type="datetime-local" [(ngModel)]="draft.startTime"></label>
+          <label>Closes at (IST)<input name="editEndTime" type="datetime-local" [(ngModel)]="draft.endTime"></label>
+          <label>Passing marks<input name="editPassing" type="number" min="0" step="0.5" [(ngModel)]="draft.passingMarks" required></label>
+          <label>Default wrong-answer penalty<input name="editNegative" type="number" min="0" max="100" step="0.25" [(ngModel)]="draft.negativeMarking" required></label>
+        </div>
+        <article class="builder-question" *ngFor="let question of draft.questions; let i = index">
+          <div class="builder-question-head"><span class="card-kicker">QUESTION {{ i + 1 }}</span><div class="question-management-actions"><button type="button" class="text-button" (click)="moveEditQuestion(i, -1)" [disabled]="i === 0">Move up</button><button type="button" class="text-button" (click)="moveEditQuestion(i, 1)" [disabled]="i === draft.questions.length - 1">Move down</button><button type="button" class="text-button remove-question" (click)="removeEditQuestion(i)" [disabled]="draft.questions.length === 1">Remove</button></div></div>
+          <label>Question text<textarea [name]="'editQuestionText' + i" [(ngModel)]="question.questionText" required minlength="5" maxlength="3000" rows="2"></textarea></label>
+          <div class="builder-options"><label *ngFor="let j of optionIndexes">Option {{ ['A','B','C','D'][j] }}<input [name]="'editQuestion' + i + 'option' + j" [(ngModel)]="question.options[j]" required maxlength="500"></label></div>
+          <div class="builder-grid"><label>Correct option<select [name]="'editCorrect' + i" [(ngModel)]="question.correctIndex"><option [ngValue]="0">A</option><option [ngValue]="1">B</option><option [ngValue]="2">C</option><option [ngValue]="3">D</option></select></label><label>Marks<input [name]="'editMarks' + i" type="number" min="0.01" max="100" step="0.5" [(ngModel)]="question.marks" required></label><label>Wrong-answer penalty<input [name]="'editNegative' + i" type="number" min="0" max="100" step="0.25" [(ngModel)]="question.negativeMarks" required></label><label>Topic<input [name]="'editTopic' + i" [(ngModel)]="question.topic" maxlength="100"></label><label>Difficulty<select [name]="'editQuestionDifficulty' + i" [(ngModel)]="question.difficulty"><option value="EASY">Easy</option><option value="MEDIUM">Medium</option><option value="HARD">Hard</option></select></label><label class="wide-field">Explanation<textarea [name]="'editExplanation' + i" [(ngModel)]="question.explanation" maxlength="2000" rows="2"></textarea></label></div>
+        </article>
+        <div class="builder-controls"><button type="button" class="button secondary" (click)="addEditQuestion()" [disabled]="draft.questions.length >= 100">＋ Add question</button><div class="builder-toggles"><label><input type="checkbox" name="editShowResults" [(ngModel)]="draft.showResults"> Show results after submission</label><label><input type="checkbox" name="editShowExplanations" [(ngModel)]="draft.showExplanations"> Show explanations</label></div><button type="button" class="button secondary" (click)="cancelEditTest()">Cancel</button><button class="button primary" [disabled]="busy">{{ busy ? 'Saving…' : 'Save assessment' }} <span>→</span></button></div>
+      </form>
+    </section>
+    <section class="test-builder panel" *ngIf="showCreateTest">
+      <div class="section-title"><div><span class="section-index">NEW</span><h2>Create an assessment</h2></div><span class="count-chip">{{ testDraft.questions.length }} QUESTIONS</span></div>
+      <form (ngSubmit)="createAssessment()">
+        <div class="builder-grid">
+          <label>Assessment title<input name="testTitle" [(ngModel)]="testDraft.title" required minlength="3" maxlength="120" placeholder="e.g. C Programming Fundamentals"></label>
+          <label>Category<input name="testCategory" [(ngModel)]="testDraft.category" required placeholder="Programming"></label>
+          <label class="wide-field">Description<textarea name="testDescription" [(ngModel)]="testDraft.description" required minlength="5" maxlength="2000" rows="2" placeholder="What will candidates be assessed on?"></textarea></label>
+          <label>Difficulty<select name="testDifficulty" [(ngModel)]="testDraft.difficulty"><option value="EASY">Easy</option><option value="MEDIUM">Medium</option><option value="HARD">Hard</option></select></label>
+          <label>Duration (minutes)<input name="testDuration" type="number" min="1" max="300" [(ngModel)]="testDraft.durationMinutes" required></label>
+          <label>Available from <span class="field-hint">India Standard Time (IST)</span><input name="testStartTime" type="datetime-local" [(ngModel)]="testDraft.startTime"><small class="field-hint">Leave blank to make the assessment available immediately.</small></label>
+          <label>Closes at <span class="field-hint">India Standard Time (IST)</span><input name="testEndTime" type="datetime-local" [(ngModel)]="testDraft.endTime"><small class="field-hint">Optional. The attempt deadline will never exceed this time.</small></label>
+          <label>Passing marks<input name="testPassing" type="number" min="0" step="0.5" [(ngModel)]="testDraft.passingMarks" required></label>
+          <label>Default wrong-answer penalty<input name="testNegative" type="number" min="0" max="100" step="0.25" [(ngModel)]="testDraft.negativeMarking" required></label>
+        </div>
+        <article class="builder-question" *ngFor="let question of testDraft.questions; let i = index">
+          <div class="builder-question-head"><span class="card-kicker">QUESTION {{ i + 1 }}</span><button type="button" class="text-button remove-question" (click)="removeQuestion(i)" [disabled]="testDraft.questions.length === 1">Remove</button></div>
+          <label>Question text<textarea [name]="'questionText' + i" [(ngModel)]="question.questionText" required minlength="5" maxlength="3000" rows="2" placeholder="Write a clear question"></textarea></label>
+          <div class="builder-options"><label *ngFor="let j of optionIndexes">Option {{ ['A','B','C','D'][j] }}<input [name]="'question' + i + 'option' + j" [(ngModel)]="question.options[j]" required maxlength="500"></label></div>
+          <div class="builder-grid"><label>Correct option<select [name]="'correct' + i" [(ngModel)]="question.correctIndex"><option [ngValue]="0">A</option><option [ngValue]="1">B</option><option [ngValue]="2">C</option><option [ngValue]="3">D</option></select></label><label>Marks<input [name]="'marks' + i" type="number" min="0.01" max="100" step="0.5" [(ngModel)]="question.marks" required></label><label>Wrong-answer penalty<input [name]="'negative' + i" type="number" min="0" max="100" step="0.25" [(ngModel)]="question.negativeMarks" required></label><label>Topic<input [name]="'topic' + i" [(ngModel)]="question.topic" maxlength="100"></label><label>Difficulty<select [name]="'questionDifficulty' + i" [(ngModel)]="question.difficulty"><option value="EASY">Easy</option><option value="MEDIUM">Medium</option><option value="HARD">Hard</option></select></label><label class="wide-field">Explanation (optional)<textarea [name]="'explanation' + i" [(ngModel)]="question.explanation" maxlength="2000" rows="2"></textarea></label></div>
+        </article>
+        <div class="builder-controls"><button type="button" class="button secondary" (click)="addQuestion()" [disabled]="testDraft.questions.length >= 100">＋ Add question</button><div class="builder-toggles"><label><input type="checkbox" name="showResults" [(ngModel)]="testDraft.showResults"> Show results after submission</label><label><input type="checkbox" name="showExplanations" [(ngModel)]="testDraft.showExplanations"> Show explanations</label></div><button class="button primary" [disabled]="busy">{{ busy ? 'Creating…' : 'Create assessment' }} <span>→</span></button></div>
+      </form>
+    </section>
+    <section class="metrics-grid" *ngIf="adminData"><article class="metric-card panel"><span>TOTAL CANDIDATES</span><strong>{{ adminData.metrics.candidates }}</strong><small>REGISTERED CANDIDATES</small></article><article class="metric-card panel"><span>ASSESSMENTS</span><strong>{{ adminData.metrics.tests }}</strong><small>{{ adminData.metrics.activeTests }} CURRENTLY ACTIVE</small></article><article class="metric-card panel"><span>COMPLETED ATTEMPTS</span><strong>{{ adminData.metrics.completedAttempts }}</strong><small>SUBMITTED ASSESSMENTS</small></article><article class="metric-card panel"><span>AVERAGE SCORE</span><strong>{{ adminData.metrics.averageScore }}</strong><small>{{ adminData.metrics.passRate }}% PASS RATE</small></article><article class="metric-card panel"><span>SECURITY EVENTS</span><strong>{{ adminData.metrics.violations }}</strong><small>RECORDED BY THE PLATFORM</small></article></section>
+    <section class="admin-tests" id="assessment-activity-alerts" *ngIf="adminData">
+      <div class="section-title"><div><span class="section-index">02</span><h2>Assessment activity alerts</h2></div><span class="count-chip">{{ adminData.metrics.violations }} EVENTS</span></div>
+      <p class="muted">These events record when a candidate leaves the assessment page. They are signals for admin review, not proof of misconduct.</p>
+      <div class="attendance-table" *ngIf="adminData.violationEvents.length; else noViolationEvents">
+        <div class="table-head"><span>CANDIDATE</span><span>ASSESSMENT</span><span>EVENT</span><span>RECORDED AT (IST)</span><span>BATCH</span></div>
+        <div class="table-row" *ngFor="let event of adminData.violationEvents">
+          <span>{{ event.candidateName }}<small class="field-hint">{{ event.candidateEmail }}</small></span>
+          <span>{{ event.testTitle }}</span>
+          <span>{{ event.type.replace('_', ' ') }}</span>
+          <span>{{ formatDateTime(event.createdAt) }}</span>
+          <span>{{ event.batchNumber || '—' }}</span>
+        </div>
+      </div>
+      <ng-template #noViolationEvents><p class="muted">No assessment activity alerts have been recorded.</p></ng-template>
+      <p class="muted" *ngIf="adminData.metrics.violations > adminData.violationEvents.length">Showing the latest {{ adminData.violationEvents.length }} events out of {{ adminData.metrics.violations }} total.</p>
+    </section>
+    <section class="admin-tests" *ngIf="adminData">
+      <div class="section-title"><div><span class="section-index">01</span><h2>Assessments & attendance</h2></div><span class="count-chip">{{ adminData.tests.length }} TESTS</span></div>
+      <article class="admin-test panel" *ngFor="let test of adminData.tests">
+        <div class="admin-test-head"><div><span class="category-tag">{{ test.category }}</span><h3>{{ test.title }}</h3></div><span class="difficulty" [class]="test.difficulty.toLowerCase()">{{ test.difficulty }}</span></div>
+        <div class="admin-meta"><span class="test-status" [class]="test.status.toLowerCase()">{{ test.status }}</span><span>{{ test.questionCount }} questions</span><span>{{ test.totalMarks }} marks</span><span>{{ test.attendance.length }} started</span><span>{{ test.results.length }} submitted</span></div>
+        <div class="admin-meta schedule-meta"><span>Starts: {{ formatScheduledTime(test.startTime) }}</span><span>Closes: {{ formatScheduledTime(test.endTime) }}</span><span>Duration: {{ test.durationMinutes }} minutes</span></div>
+        <div class="admin-assessment-actions"><button class="button secondary" type="button" (click)="beginEditTest(test)" [disabled]="test.status === 'ARCHIVED'">Edit assessment</button><button class="button secondary" type="button" (click)="setAssessmentArchived(test, test.status !== 'ARCHIVED')" [disabled]="busy">{{ test.status === 'ARCHIVED' ? 'Restore assessment' : 'Archive assessment' }}</button><button class="button danger-button" *ngIf="!test.attendance.length && test.status !== 'ARCHIVED'" type="button" (click)="deleteAssessment(test)" [disabled]="busy">Delete assessment</button></div>
+        <button class="button secondary violation-details-toggle" type="button" (click)="toggleTestViolationActivity(test.id)">
+          {{ expandedViolationTests.has(test.id) ? 'Hide' : 'View' }} this assessment’s activity ({{ hasTestViolationCount(test.id) ? violationCountsByTest[test.id] : '…' }})
+        </button>
+        <div class="attendance-table" *ngIf="expandedViolationTests.has(test.id)">
+          <p class="muted" *ngIf="violationLoadingByTest[test.id]">Loading activity for this assessment…</p>
+          <ng-container *ngIf="!violationLoadingByTest[test.id]">
+            <div class="table-head"><span>CANDIDATE</span><span>BATCH</span><span>EVENT</span><span>RECORDED AT (IST)</span><span>EMAIL</span></div>
+            <div class="table-row" *ngFor="let event of violationEventsByTest[test.id]">
+              <span>{{ event.candidateName }}</span><span>{{ event.batchNumber || '—' }}</span><span>{{ event.type.replace('_', ' ') }}</span><span>{{ formatDateTime(event.createdAt) }}</span><span>{{ event.candidateEmail }}</span>
+            </div>
+            <p class="muted" *ngIf="violationCountsByTest[test.id] === 0">No recorded activity alerts for this assessment.</p>
+            <p class="muted" *ngIf="(violationCountsByTest[test.id] ?? 0) > (violationEventsByTest[test.id]?.length ?? 0)">Showing the latest 100 events for this assessment.</p>
+          </ng-container>
+        </div>
+        <div class="attendance-table" *ngIf="test.attendance.length">
+          <div class="table-head"><span>CANDIDATE</span><span>BATCH NUMBER</span><span>STATUS</span><span>STARTED</span><span>SUBMITTED</span></div>
+          <div class="table-row" *ngFor="let entry of test.attendance"><span>{{ entry.name }}</span><span>{{ entry.batchNumber || '—' }}</span><span class="status-text">{{ entry.status.replace('_', ' ') }}</span><span>{{ entry.joinedAt ? (entry.joinedAt | date:'shortTime') : '—' }}</span><span>{{ entry.submittedAt ? (entry.submittedAt | date:'shortTime') : '—' }}</span></div>
+        </div>
+        <p class="muted" *ngIf="!test.attendance.length">No candidates have started this assessment.</p>
+        <div class="attendance-table results-table" *ngIf="test.results.length">
+          <div class="table-head"><span>RANKED CANDIDATE</span><span>BATCH NUMBER</span><span>SCORE</span><span>ATTEMPT</span><span></span></div>
+          <div class="table-row" *ngFor="let entry of test.results; let i = index"><span>#{{ i + 1 }} · {{ entry.name }}</span><span>{{ entry.batchNumber || '—' }}</span><span>{{ entry.score }} / {{ test.totalMarks }}</span><span>{{ entry.status.replace('_', ' ') }}</span><span></span></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer" *ngIf="view !== 'exam'"><span>RTF <span class="footer-dash">/</span> RADAR TEST FIELDS</span><span>TECHNICAL ASSESSMENT & PERFORMANCE PLATFORM</span><span>© 2026 RTF</span></footer>
+</div>

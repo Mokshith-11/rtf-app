@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  batchNumber  String?
+  phone        String?
+  passwordHash String
+  role         UserRole     @default(CANDIDATE)
+  sessionVersion Int       @default(0)
+  createdAt    DateTime    @default(now())
+  attempts     Attempt[]
+  attendance   Attendance[]
+  testsCreated Test[]       @relation("TestCreator")
+  passwordResetToken PasswordResetToken?
+
+  @@index([batchNumber])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+model Test {
+  id               String       @id @default(uuid())
+  title            String
+  description      String
+  category         String
+  difficulty       String
+  durationMinutes  Int
+  totalMarks       Float
+  passingMarks     Float
+  negativeMarking  Float        @default(0)
+  startTime        DateTime?
+  endTime          DateTime?
+  shuffleQuestions Boolean      @default(false)
+  shuffleOptions   Boolean      @default(false)
+  showResults      Boolean      @default(true)
+  showExplanations Boolean      @default(true)
+  isArchived       Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  createdById      String
+  attempts         Attempt[]
+  attendance       Attendance[]
+  questions        Question[]
+  createdBy        User         @relation("TestCreator", fields: [createdById], references: [id])
+}
+
+model Question {
+  id            String   @id @default(uuid())
+  testId        String
+  questionText  String
+  options       Json
+  correctIndex  Int
+  marks         Float    @default(1)
+  negativeMarks Float    @default(0)
+  explanation   String?
+  topic         String?
+  difficulty    String   @default("MEDIUM")
+  position      Int
+  answers       Answer[]
+  test          Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@unique([testId, position])
+  @@index([testId])
+}
+
+model Attempt {
+  id          String        @id @default(uuid())
+  userId      String
+  testId      String
+  startedAt   DateTime      @default(now())
+  submittedAt DateTime?
+  score       Float?
+  percentage  Float?
+  status      AttemptStatus @default(IN_PROGRESS)
+  answers     Answer[]
+  test        Test          @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  violations  Violation[]
+
+  @@unique([userId, testId])
+  @@index([testId, status])
+}
+
+model Answer {
+  id            String   @id @default(uuid())
+  attemptId     String
+  questionId    String
+  selectedIndex Int?
+  isCorrect     Boolean?
+  marksAwarded  Float    @default(0)
+  updatedAt     DateTime @updatedAt
+  attempt       Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+}
+
+model Violation {
+  id        String   @id @default(uuid())
+  attemptId String
+  type      String
+  details   String?
+  createdAt DateTime @default(now())
+  attempt   Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId, type])
+}
+
+model Attendance {
+  id          String           @id @default(uuid())
+  testId      String
+  userId      String
+  status      AttendanceStatus @default(NOT_STARTED)
+  joinedAt    DateTime?
+  submittedAt DateTime?
+  test        Test             @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([testId, userId])
+  @@index([testId, status])
+}
+
+enum UserRole {
+  CANDIDATE
+  ADMIN
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  AUTO_SUBMITTED
+}
+
+enum AttendanceStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  AUTO_SUBMITTED
+}

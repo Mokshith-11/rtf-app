@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rtf
+      POSTGRES_USER: rtf
+      POSTGRES_PASSWORD: rtf_dev_only
+    ports:
+      - "5432:5432"
+    volumes:
+      - rtf-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rtf -d rtf"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  rtf-postgres:

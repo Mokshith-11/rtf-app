@@ -1,0 +1,383 @@
+.test-status {
+  border: 1px solid #315762;
+  color: var(--cyan);
+  font: 9px var(--mono);
+  letter-spacing: .7px;
+  padding: 6px 8px;
+}
+
+.test-status.scheduled {
+  border-color: #6b5837;
+  color: var(--orange);
+}
+
+.test-status.closed {
+  border-color: #563b40;
+  color: var(--red);
+}
+
+.test-status.archived {
+  border-color: #54616a;
+  color: #a9bac0;
+}
+
+.question-management-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.schedule-meta {
+  margin-top: -7px;
+}
+
+.success-banner {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid #287557;
+  border-radius: 3px;
+  background: #102d27;
+  color: #9be0bc;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-assessment-actions {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.button.danger-button {
+  border-color: #884b49;
+  color: #ffaaa4;
+  background: transparent;
+}
+
+.button.danger-button:hover:not(:disabled) {
+  background: #351f25;
+}
+
+.candidate-nav,
+.assessment-actions,
+.admit-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.candidate-nav {
+  margin: -18px 0 28px;
+}
+
+.assessment-actions {
+  justify-content: flex-end;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+}
+
+.profile-grid > div {
+  display: grid;
+  gap: 8px;
+  padding: 19px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.profile-grid span,
+.admit-fields span,
+.admit-card-reference,
+.admit-section h2 {
+  color: var(--muted);
+  font: 10px var(--mono);
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+
+.profile-grid strong,
+.admit-fields strong {
+  overflow-wrap: anywhere;
+}
+
+.admit-card-page {
+  max-width: 900px;
+}
+
+.admit-actions {
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.admit-card {
+  padding: clamp(22px, 5vw, 48px);
+  color: var(--ink);
+}
+
+.admit-card-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--cyan);
+}
+
+.admit-card-header h1 {
+  margin: 7px 0 4px;
+  font-size: clamp(24px, 4vw, 34px);
+}
+
+.admit-card-header p,
+.admit-section p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.admit-card-reference,
+.admit-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admit-card-reference {
+  padding: 18px 0 4px;
+}
+
+.admit-card-reference span,
+.admit-fields > div {
+  display: grid;
+  gap: 6px;
+}
+
+.admit-card-reference strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 9px;
+  letter-spacing: 0;
+}
+
+.admit-section {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.admit-section h2 {
+  margin: 0 0 14px;
+  color: var(--cyan);
+}
+
+.admit-section h3 {
+  margin: 0 0 8px;
+}
+
+.admit-section ol {
+  margin-bottom: 0;
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+.admit-security-notice {
+  margin: 20px 0 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.violation-count-alert {
+  border: 1px solid #884b49;
+  border-radius: 3px;
+  background: #351f25;
+  color: #ffaaa4;
+  padding: 8px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.violation-count-alert:hover {
+  border-color: #ff817c;
+}
+
+.violation-toast {
+  position: fixed;
+  z-index: 20;
+  top: 88px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: min(420px, calc(100vw - 40px));
+  padding: 13px 16px;
+  border: 1px solid #884b49;
+  border-radius: 4px;
+  background: #351f25;
+  color: #ffcbc5;
+  box-shadow: 0 12px 32px #020a10a6;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.violation-toast button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+}
+
+.student-violation-toast {
+  position: fixed;
+  z-index: 30;
+  top: 88px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: min(440px, calc(100vw - 40px));
+  padding: 14px 17px;
+  border: 1px solid #a77839;
+  border-radius: 4px;
+  background: #392b1c;
+  color: #ffe0ae;
+  box-shadow: 0 12px 32px #020a10a6;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.student-violation-toast button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+}
+
+.violation-details-toggle {
+  margin: 0 0 14px;
+}
+
+@media (max-width: 680px) {
+  .top-actions {
+    gap: 10px;
+  }
+
+  .violation-count-alert {
+    max-width: 128px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .violation-toast,
+  .student-violation-toast {
+    top: 74px;
+    right: 10px;
+  }
+
+  .admin-heading-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-top: 16px;
+  }
+
+  .test-builder {
+    padding: 16px;
+  }
+
+  .builder-grid,
+  .builder-options {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-grid .wide-field {
+    grid-column: auto;
+  }
+
+  .builder-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .builder-toggles {
+    margin-right: 0;
+  }
+
+  .result-breakdown {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 15px;
+  }
+
+  .result-breakdown > div:nth-child(odd) {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .profile-grid,
+  .admit-fields,
+  .admit-card-reference {
+    grid-template-columns: 1fr;
+  }
+
+  .assessment-actions {
+    justify-content: flex-start;
+  }
+
+  .admin-assessment-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .question-management-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .admit-card,
+  .admit-card * {
+    visibility: visible !important;
+  }
+
+  .admit-card-page {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .admit-card {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    border: 0;
+    box-shadow: none;
+    color: #172b38;
+    background: #fff;
+    padding: 12mm;
+    --ink: #172b38;
+    --muted: #526774;
+    --line: #d5e0e4;
+    --cyan: #087f79;
+  }
+
+  .admit-actions,
+  .site-footer,
+  .topbar {
+    display: none !important;
+  }
+}
