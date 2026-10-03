@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rtf-app",
+  "compatibility_date": "2026-10-02",
+  "assets": {
+    "directory": "./RTF-frontend/dist/rtf-frontend/browser"
+  }
+}
